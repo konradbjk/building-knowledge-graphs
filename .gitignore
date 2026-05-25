@@ -2,3 +2,7 @@ articles/
 tutorials/
 .env
 *.jsonl
+__pycache__/
+*.pyc
+
+data/
