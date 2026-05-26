@@ -1,165 +1,141 @@
 # Building Knowledge Graphs
 
-This repository is an exploratory notebook project for turning technical content into structured knowledge that can be searched, indexed, stored, and visualized as graphs.
+This repository is a working space for talk material about retrieval, structured extraction, and knowledge-graph-oriented analysis.
 
-The main workflow lives in [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb). The notebook started as `test_processing.ipynb` and was renamed to reflect what it actually does.
+The current center of gravity is the demo flow for **From RAG To Knowledge Graphs In 2027**:
 
-## What The Notebook Covers
+1. load markdown documents from `data/*.md`
+2. extract graph-friendly metadata with `pydantic-ai`
+3. persist the results as processed markdown and JSONL
+4. ingest the extracted structure into Neo4j
+5. run simple Cypher queries for exploration and presentation
 
-The notebook walks through a full experimental pipeline:
+## Current Deliverables
 
-1. Load local MDX articles with frontmatter metadata.
-2. Clean and normalize article content.
-3. Convert articles into LangChain `Document` objects.
-4. Use an LLM to extract structured metadata such as technologies, concepts, difficulty, and section summaries.
-5. Split enriched content into smaller units for retrieval.
-6. Index those units in Qdrant with embeddings.
-7. Ingest YouTube videos and playlists, attach transcript and video metadata, and prepare them as documents.
-8. Save and load documents from MongoDB.
-9. Build NetworkX graphs from extracted technologies and concepts.
-10. Export interactive graph visualizations with PyVis.
+- [knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j_demo.py): notebook-style `# %%` Python file for the main extraction and Neo4j demo
+- [from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): procedural plan for the demo notebook flow
+- [prompts/graph-metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/graph-metadata-extractor.py): source-agnostic extraction prompt used by the Neo4j demo
+- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): older exploratory notebook with broader ingestion and graph experiments
+- [neo4j-intro.ipynb](/Users/konrad/Projects/building-knowledge-graphs/neo4j-intro.ipynb): smaller Neo4j connection and query scratchpad
+
+## Main Demo Flow
+
+The intended demo path is:
+
+1. inspect markdown files in `data/*.md`
+2. extract a small schema: `summary`, `technologies`, `concepts`, `business_topics`, `people`, `organizations`
+3. append one JSON record per document to `processed/graph_extractions.jsonl`
+4. write processed markdown files with `graph` data in frontmatter to `processed/*.md`
+5. connect to Neo4j Aura with the Python driver
+6. create constraints and ingest `Document`, `Source`, and extracted entity nodes
+7. query the graph with `driver.execute_query(...)`
+
+The notebook-style code is async-first on the extraction side and uses `await extraction_agent.run(...)` rather than synchronous wrappers.
 
 ## Repository Layout
 
-- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): exploratory end-to-end notebook
+- [knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j_demo.py): main demo code path
+- [from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): demo plan
+- [prompts/graph-metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/graph-metadata-extractor.py): extraction prompt for graph metadata
+- [prompts/metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/metadata-extractor.py): earlier prompt reference
+- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): exploratory notebook
+- [neo4j-intro.ipynb](/Users/konrad/Projects/building-knowledge-graphs/neo4j-intro.ipynb): Neo4j scratchpad notebook
 - [pyproject.toml](/Users/konrad/Projects/building-knowledge-graphs/pyproject.toml): project dependencies managed with `uv`
 - [uv.lock](/Users/konrad/Projects/building-knowledge-graphs/uv.lock): locked dependency versions
 
 ## Setup
 
-The project uses Python 3.12+ and is configured for `uv`.
+The project uses Python and is managed with `uv`.
 
 ```bash
 uv sync
 uv run jupyter notebook
 ```
 
-If you want to run the notebook end to end, the current workflow expects several external services and credentials to exist locally.
+The current dependency set includes:
 
-## Expected Inputs And Services
+- `pydantic-ai-slim[openai]`
+- `neo4j`
+- `python-frontmatter`
+- `python-dotenv`
+- `pandas`
+- `networkx`
+- `pyvis`
+- `qdrant-client`
+- `pymongo`
 
-### Local content
+## Expected Inputs
 
-The notebook references local content that is not included in this repository:
+The current Neo4j demo expects local markdown documents under `data/*.md`.
 
-- `articles/<SAMPLE_ARTICLE_NAME>.mdx`
-- `tutorials/*.mdx`
-- `sample.jsonl`
-- `local_documents.jsonl`
+Each file should contain frontmatter similar to:
 
-The MDX files are expected to contain frontmatter fields such as:
+```md
+---
+title: Example title
+source: Example source
+date_published: 2024-11-03
+author: Example author
+url: https://example.com/article
+---
 
-- `title`
-- `description`
-- `image`
-
-### Environment variables
-
-The notebook loads environment variables via `.env` and uses at least:
-
-- `GOOGLE_DEVELOPER_KEY` for YouTube Data API requests
-
-There are also placeholder URLs in the notebook such as `https://<BLOG_URL>/...` that should be replaced with your actual site URL if you want article links in metadata to be valid.
-
-### External dependencies
-
-The notebook assumes these services are available:
-
-- Qdrant at `http://localhost:6333`
-- MongoDB at `mongodb://admin:1234example@localhost:27017/`
-- Azure OpenAI access for `gpt-4.1` / `gpt-4.1-mini`
-- OpenAI embeddings for vector indexing
-- spaCy model `en_core_web_sm`
-
-For spaCy, install the model separately if it is not already present:
-
-```bash
-uv run python -m spacy download en_core_web_sm
+Document body...
 ```
 
-## Pipeline Details
+The extraction prompt is designed to reason from the document body only, not from frontmatter fields.
 
-### 1. MDX ingestion
+## Generated Artifacts
 
-The notebook defines:
+Running the main extraction flow can create:
 
-- `clean_markdown_content()` to strip formatting and reduce MDX content to plain text
-- `parse_mdx_file()` to extract frontmatter and build canonical article metadata
-- `MDXLoader` and `MDXDirectoryLoader` to turn files into LangChain documents
+- `processed/graph_extractions.jsonl`
+  Purpose: append-friendly precomputed extraction records, one JSON object per document
+- `processed/*.md`
+  Purpose: processed markdown copies with extracted `graph` metadata stored in frontmatter
 
-This is the local article ingestion layer.
+The JSONL file exists so the extraction batch can be reused later without rerunning the model step.
 
-### 2. Metadata extraction with LLMs
+## Environment Variables
 
-The notebook builds a prompt template that asks an LLM to extract:
+The repository uses `.env` for local configuration.
 
-- technologies
-- concepts
-- difficulty analysis
-- difficulty level
-- required skills
-- section summaries
+The current demo paths expect at least:
 
-The output is parsed as JSON and merged back into document metadata so each section can be indexed separately.
+- `KG_DEMO_MODEL`
+- `NEO4J_URI`
+- `NEO4J_USERNAME`
+- `NEO4J_PASSWORD`
+- `GOOGLE_DEVELOPER_KEY` for the older YouTube-oriented notebook workflow
 
-### 3. Self-query preparation
+For Neo4j Aura, use the database credentials from the Aura credentials file. The current demo code assumes `driver.execute_query(...)` and routes read queries explicitly with `RoutingControl.READ`.
 
-The notebook experiments with LangChain structured query generation for fields such as:
+## Neo4j Notes
 
-- `technologies`
-- `concepts`
+The current Neo4j demo uses:
 
-This is intended to support metadata-aware retrieval against Qdrant.
+- one reusable driver instance per notebook run
+- `driver.execute_query(...)` rather than `session.run(...)` for the simple demo path
+- `Result.to_df` for read queries that should display naturally in a notebook
+- explicit read routing for read-only Cypher queries
 
-### 4. Vector indexing
+The ontology is intentionally small:
 
-The `ContentIndexedChunker` and `index_content()` helpers convert enriched content into retrieval chunks and push them into a Qdrant collection.
+- node labels: `Document`, `Source`, `Technology`, `Concept`, `BusinessTopic`, `Person`, `Organization`
+- relationships: `FROM_SOURCE`, `MENTIONS_TECHNOLOGY`, `MENTIONS_CONCEPT`, `MENTIONS_BUSINESS_TOPIC`, `MENTIONS_PERSON`, `MENTIONS_ORGANIZATION`
 
-The current default collection name is `tutorials`.
+## Older Exploratory Work
 
-### 5. YouTube ingestion
+[knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb) still contains broader experiments around:
 
-The notebook uses:
+- Qdrant indexing
+- MongoDB persistence
+- YouTube transcript and metadata ingestion
+- NetworkX and PyVis graph construction
 
-- `YoutubeLoader` for transcript loading
-- `pytube.Playlist` for playlist traversal
-- direct YouTube Data API calls for video metadata
-
-Each video document is enriched with fields such as title, description, publish date, views, likes, comments, duration, and source URL.
-
-### 6. MongoDB persistence
-
-The notebook includes helper functions to:
-
-- insert LangChain documents into MongoDB
-- delete inserted documents by `_id`
-- load stored documents back into LangChain `Document` objects
-
-This acts as a simple persistence layer for the knowledge base.
-
-### 7. Graph construction
-
-The notebook finishes with several graph experiments:
-
-- keyword-to-concept graph construction
-- multi-dimensional graph construction across content, technologies, concepts, and difficulty
-- content-to-content similarity graph using Jaccard similarity
-- community detection and identification of highly connected bridge documents
-
-Interactive graph views are exported as HTML through PyVis.
-
-## Outputs
-
-Depending on which sections you run, the notebook can produce:
-
-- LangChain `Document` collections
-- enriched metadata JSON objects
-- Qdrant collections
-- MongoDB records
-- interactive HTML graph visualizations such as:
-  - `multi_dimensional_graph.html`
-  - `content_similarity_graph.html`
+That notebook is still useful as reference material, but it is no longer the best entry point for the talk demo.
 
 ## Current State
 
-This repository is centered on one exploratory notebook rather than a packaged library or application. Some paths, credentials, hostnames, and sample data references are placeholders or local-only values, so the notebook is best treated as a prototype and reference workflow.
+This repository is still notebook-first rather than application-first. Some workflows depend on local services, credentials, and local markdown corpora that are not checked into the repository.
+
+The extraction and Neo4j demo code was updated significantly during talk preparation, but it has not been fully re-run end to end in this repository after every change. Treat the repo as active working material rather than a frozen, fully reproducible package.
