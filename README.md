@@ -12,15 +12,20 @@ The current center of gravity is the demo flow for **From RAG To Knowledge Graph
 
 ## Current Deliverables
 
-- [knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j_demo.py): notebook-style `# %%` Python file for the main extraction and Neo4j demo
-- [from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): procedural plan for the demo notebook flow
+- [knowledge_extraction_neo4j.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j.ipynb): the first notebook for the extraction-to-Neo4j demo flow
+- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): more manual graph exploration and visualization work using tools such as NetworkX and PyVis
+- [misc/from_rag_to_knowledge_graphs/knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/misc/from_rag_to_knowledge_graphs/knowledge_extraction_neo4j_demo.py): notebook-style `# %%` Python version of the talk demo flow
+- [misc/from_rag_to_knowledge_graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/misc/from_rag_to_knowledge_graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): procedural plan for the talk demo
 - [prompts/graph-metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/graph-metadata-extractor.py): source-agnostic extraction prompt used by the Neo4j demo
-- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): older exploratory notebook with broader ingestion and graph experiments
 - [neo4j-intro.ipynb](/Users/konrad/Projects/building-knowledge-graphs/neo4j-intro.ipynb): smaller Neo4j connection and query scratchpad
 
-## Main Demo Flow
+## Notebook Roles
 
-The intended demo path is:
+The repository currently has two main notebook tracks.
+
+### 1. `knowledge_extraction_neo4j.ipynb`
+
+This is the notebook-first version of the talk demo:
 
 1. inspect markdown files in `data/*.md`
 2. extract a small schema: `summary`, `technologies`, `concepts`, `business_topics`, `people`, `organizations`
@@ -28,18 +33,29 @@ The intended demo path is:
 4. write processed markdown files with `graph` data in frontmatter to `processed/*.md`
 5. connect to Neo4j Aura with the Python driver
 6. create constraints and ingest `Document`, `Source`, and extracted entity nodes
-7. query the graph with `driver.execute_query(...)`
+7. query the graph with Neo4j Python driver code
 
 The notebook-style code is async-first on the extraction side and uses `await extraction_agent.run(...)` rather than synchronous wrappers.
 
+### 2. `knowledge_ingestion_and_graph_exploration.ipynb`
+
+This notebook is the broader manual exploration path. It is used for:
+
+1. ingesting and enriching content more manually
+2. exploring extracted structure without forcing the full talk flow
+3. building graph views with tools such as NetworkX
+4. visualizing graph structure with tools such as PyVis
+5. experimenting with related retrieval and graph-analysis ideas
+
 ## Repository Layout
 
-- [knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j_demo.py): main demo code path
-- [from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): demo plan
+- [knowledge_extraction_neo4j.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_extraction_neo4j.ipynb): first notebook for extraction plus Neo4j ingestion
 - [prompts/graph-metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/graph-metadata-extractor.py): extraction prompt for graph metadata
 - [prompts/metadata-extractor.py](/Users/konrad/Projects/building-knowledge-graphs/prompts/metadata-extractor.py): earlier prompt reference
-- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): exploratory notebook
+- [knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb): manual ingestion, graph exploration, and visualization notebook
 - [neo4j-intro.ipynb](/Users/konrad/Projects/building-knowledge-graphs/neo4j-intro.ipynb): Neo4j scratchpad notebook
+- [misc/from_rag_to_knowledge_graphs/knowledge_extraction_neo4j_demo.py](/Users/konrad/Projects/building-knowledge-graphs/misc/from_rag_to_knowledge_graphs/knowledge_extraction_neo4j_demo.py): `# %%` export of the talk demo notebook logic
+- [misc/from_rag_to_knowledge_graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md](/Users/konrad/Projects/building-knowledge-graphs/misc/from_rag_to_knowledge_graphs/from_rag_to_knowledge_graphs_in_2027_demo_plan.md): demo planning document
 - [pyproject.toml](/Users/konrad/Projects/building-knowledge-graphs/pyproject.toml): project dependencies managed with `uv`
 - [uv.lock](/Users/konrad/Projects/building-knowledge-graphs/uv.lock): locked dependency versions
 
@@ -123,16 +139,16 @@ The ontology is intentionally small:
 - node labels: `Document`, `Source`, `Technology`, `Concept`, `BusinessTopic`, `Person`, `Organization`
 - relationships: `FROM_SOURCE`, `MENTIONS_TECHNOLOGY`, `MENTIONS_CONCEPT`, `MENTIONS_BUSINESS_TOPIC`, `MENTIONS_PERSON`, `MENTIONS_ORGANIZATION`
 
-## Older Exploratory Work
+## Manual Exploration Work
 
-[knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb) still contains broader experiments around:
+[knowledge_ingestion_and_graph_exploration.ipynb](/Users/konrad/Projects/building-knowledge-graphs/knowledge_ingestion_and_graph_exploration.ipynb) contains the broader manual exploration track around:
 
 - Qdrant indexing
 - MongoDB persistence
 - YouTube transcript and metadata ingestion
 - NetworkX and PyVis graph construction
 
-That notebook is still useful as reference material, but it is no longer the best entry point for the talk demo.
+That notebook is not just archival reference. It is the place for manual graph work and visualization-heavy exploration outside the narrower talk demo path.
 
 ## Current State
 
