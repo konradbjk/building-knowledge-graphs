@@ -38,6 +38,10 @@ Keep helpers in the notebook when they are specific to one talk. Extract shared 
 
 Use simple local models for notebook data, such as dataclasses or Pydantic models, instead of heavy framework-specific document wrappers when possible. Notebook examples should be easy to explain on stage.
 
+For talk-demo corpora, when creating sample documents, prefer longer topical briefs over short note-like documents. Default target length for demo documents is 1000-2000 words of body text, excluding frontmatter, unless the user sets a different range.
+
+Use the frontmatter field name `metadata` for extracted or demo metadata unless the user explicitly asks for a different name.
+
 ## External Services And Credentials
 
 Some notebooks depend on local services or credentials, typically:
@@ -52,6 +56,8 @@ Do not assume those services are available when closing work. If a notebook path
 ## Change Rules
 
 When a user asks to update a notebook for a talk, preserve the presentation intent first and refactor second. The exact talk flow matters more than abstract cleanup.
+
+When a user redirects or corrects a pass, do not spend tokens restating what was wrong previously unless the user explicitly asks for a postmortem.
 
 When replacing an LLM framework or API surface, update the actual notebook code paths rather than only changing imports. If the old notebook relied on structured outputs, prompt templates, loaders, or vector-store wrappers, replace those pieces concretely and keep the new workflow runnable.
 
